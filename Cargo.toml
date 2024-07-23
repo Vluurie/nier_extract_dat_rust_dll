@@ -1,0 +1,9 @@
+[package]
+name = "yax_to_xml"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+quick-xml = "0.23.1"
+phf = { version = "0.10", features = ["macros"] }
+encoding_rs = "0.8.28"

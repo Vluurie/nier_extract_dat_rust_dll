@@ -1,5 +1,5 @@
 /*!
-This Rust dll provides functionality to convert YAX files to XML files. The implementation is inspired by RaiderB's Dart `yaxToXml` script
+This Rust DLL provides functionality to convert YAX files to XML files. The implementation is inspired by RaiderB's Dart `yaxToXml` script
 but rewritten in Rust for faster computation time (total 25 seconds faster on an i9 10900k then with dart).
 
 This module is intended to be called primarily from Dart using FFI (Foreign Function Interface).
@@ -24,7 +24,7 @@ Simply add the Input YAX and the Output for the XML file as parameter.
 
 2. The core logic involves reading nodes from the YAX file, mapping their tags and text, and writing these nodes to an XML structure.
 
-This structure then get's mapped like in F-SERVO or for getting the structured elements for file manipulations of the element's values like NAER does.
+This structure then get's mapped like in F-SERVO for editing or for getting the structured elements for file manipulations of the element's values like NAER does.
 
 */
 

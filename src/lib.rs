@@ -8,7 +8,9 @@ use quick_xml::Writer;
 use encoding_rs::SHIFT_JIS;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
+use std::io::{BufReader, BufWriter, Read, Seek, Write};
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 
 fn hash_to_string_map(hash: u32) -> Option<&'static str> {
     HASH_TO_STRING_MAP.get(&hash).copied()
@@ -166,21 +168,15 @@ fn yax_to_xml<R: Read + Seek>(mut bytes: R, include_annotations: bool) -> Vec<u8
     buffer
 }
 
-fn yax_file_to_xml_file(yax_file_path: &str, xml_file_path: &str) {
+#[no_mangle]
+pub extern "C" fn yax_file_to_xml_file(yax_file_path: *const c_char, xml_file_path: *const c_char) {
+    let yax_file_path = unsafe { CStr::from_ptr(yax_file_path).to_str().unwrap() };
+    let xml_file_path = unsafe { CStr::from_ptr(xml_file_path).to_str().unwrap() };
+
     let yax_file = File::open(yax_file_path).expect("Failed to open YAX file");
     let xml_bytes = yax_to_xml(BufReader::new(yax_file), true);
 
     let mut xml_file = BufWriter::new(File::create(xml_file_path).expect("Failed to create XML file"));
     xml_file.write_all(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n").unwrap();
     xml_file.write_all(&xml_bytes).unwrap();
-}
-
-fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() != 3 {
-        eprintln!("Usage: {} <input.yax> <output.xml>", args[0]);
-        std::process::exit(1);
-    }
-
-    yax_file_to_xml_file(&args[1], &args[2]);
 }

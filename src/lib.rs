@@ -1,3 +1,25 @@
+/*!
+This Rust module provides functionality to convert YAX files to XML files. The implementation is inspired by RaiderB's Dart `yaxToXml` script but rewritten in Rust for faster computation time. This module is intended to be called primarily from Dart using FFI (Foreign Function Interface).
+
+Modules:
+- `hash_map`: Contains the `HASH_TO_STRING_MAP` for mapping hash values to strings.
+- `jap_to_eng`: Contains the `JAP_TO_ENG` map for translating Japanese strings to English.
+
+Dependencies:
+- `quick_xml`: Used for creating and writing XML events.
+- `encoding_rs`: Used for decoding SHIFT_JIS encoded strings.
+
+The main components include:
+- `YaxNode`: A struct representing a node in the YAX structure.
+- Functions to read and convert YAX data to XML.
+- An external C function `yax_file_to_xml_file` for converting YAX files to XML files.
+
+Usage:
+1. `yax_file_to_xml_file` function can be called from Dart code via FFI to convert a YAX file to an XML file.
+2. The core logic involves reading nodes from the YAX file, mapping their tags and text, and writing these nodes to an XML structure.
+
+*/
+
 mod hash_map;
 mod jap_to_eng;
 
@@ -12,14 +34,17 @@ use std::io::{BufReader, BufWriter, Read, Seek, Write};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
+/// Maps a hash value to its corresponding string.
 fn hash_to_string_map(hash: u32) -> Option<&'static str> {
     HASH_TO_STRING_MAP.get(&hash).copied()
 }
 
+/// Translates a Japanese string to English.
 fn jap_to_eng(japanese: &str) -> Option<&'static str> {
     JAP_TO_ENG.get(japanese).copied()
 }
 
+/// Represents a node in the YAX structure.
 #[derive(Debug)]
 struct YaxNode {
     indentation: u8,
@@ -31,6 +56,7 @@ struct YaxNode {
 }
 
 impl YaxNode {
+    /// Creates a YaxNode from bytes read from a file.
     fn from_bytes(bytes: &mut impl Read) -> Self {
         let mut buffer = [0; 1];
         bytes.read_exact(&mut buffer).unwrap();
@@ -56,6 +82,7 @@ impl YaxNode {
         }
     }
 
+    /// Converts a YaxNode to an XML element.
     fn to_xml(&self, include_annotations: bool) -> BytesStart {
         let mut element = BytesStart::borrowed(self.tag_name.as_bytes(), self.tag_name.len());
 
@@ -82,6 +109,7 @@ impl YaxNode {
         element
     }
 
+    /// Writes the XML events for a YaxNode to an XML writer.
     fn to_xml_events(&self, writer: &mut Writer<&mut Vec<u8>>, include_annotations: bool) {
         writer.write_event(Event::Start(self.to_xml(include_annotations))).unwrap();
 
@@ -102,6 +130,7 @@ impl YaxNode {
     }
 }
 
+/// Reads a zero-terminated string from bytes.
 fn read_string_zero_terminated(bytes: &mut impl Read) -> Option<String> {
     let mut buffer = Vec::new();
     let mut byte = [0; 1];
@@ -119,6 +148,7 @@ fn read_string_zero_terminated(bytes: &mut impl Read) -> Option<String> {
     }
 }
 
+/// Converts YAX data to XML format.
 fn yax_to_xml<R: Read + Seek>(mut bytes: R, include_annotations: bool) -> Vec<u8> {
     let mut buffer = [0; 4];
     bytes.read_exact(&mut buffer).unwrap();
@@ -168,6 +198,10 @@ fn yax_to_xml<R: Read + Seek>(mut bytes: R, include_annotations: bool) -> Vec<u8
     buffer
 }
 
+/// Converts a YAX file to an XML file.
+///
+/// # Safety
+/// This function uses raw C strings as input and should be called from Dart code via FFI.
 #[no_mangle]
 pub extern "C" fn yax_file_to_xml_file(yax_file_path: *const c_char, xml_file_path: *const c_char) {
     let yax_file_path = unsafe { CStr::from_ptr(yax_file_path).to_str().unwrap() };

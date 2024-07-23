@@ -15,11 +15,16 @@ Dependencies:
 The main components include:
 - `YaxNode`: A struct representing a node in the YAX structure.
 - Functions to read and convert YAX data to XML.
-- An external C function `yax_file_to_xml_file` for converting YAX files to XML files.
+- The external C function `yax_file_to_xml_file` that get's called mainly from Dart FFI for converting YAX files to XML files.
 
 Usage:
 1. `yax_file_to_xml_file` function can be called from Dart code via FFI to convert a YAX file to an XML file.
+
+Simply add the Input YAX and the Output for the XML file as parameter.
+
 2. The core logic involves reading nodes from the YAX file, mapping their tags and text, and writing these nodes to an XML structure.
+
+This structure then get's mapped like in F-SERVO or for getting the structured elements for file manipulations of the element's values like NAER does.
 
 */
 

@@ -1,5 +1,8 @@
 /*!
-This Rust module provides functionality to convert YAX files to XML files. The implementation is inspired by RaiderB's Dart `yaxToXml` script but rewritten in Rust for faster computation time. This module is intended to be called primarily from Dart using FFI (Foreign Function Interface).
+This Rust dll provides functionality to convert YAX files to XML files. The implementation is inspired by RaiderB's Dart `yaxToXml` script
+but rewritten in Rust for faster computation time (total 25 seconds faster on an i9 10900k then with dart).
+
+This module is intended to be called primarily from Dart using FFI (Foreign Function Interface).
 
 Modules:
 - `hash_map`: Contains the `HASH_TO_STRING_MAP` for mapping hash values to strings.

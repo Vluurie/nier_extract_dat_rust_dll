@@ -39,7 +39,7 @@ use encoding_rs::SHIFT_JIS;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, Write};
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::os::raw::c_char;
 
 /// Maps a hash value to its corresponding string.
@@ -64,7 +64,7 @@ struct YaxNode {
 }
 
 impl YaxNode {
-    /// Creates a YaxNode from bytes read from a file.
+        /// Creates a YaxNode from bytes read from a file.
     fn from_bytes(bytes: &mut impl Read) -> Self {
         let mut buffer = [0; 1];
         bytes.read_exact(&mut buffer).unwrap();
@@ -74,7 +74,6 @@ impl YaxNode {
         bytes.read_exact(&mut buffer).unwrap();
         let tag_name_hash = u32::from_le_bytes(buffer);
 
-        let mut buffer = [0; 4];
         bytes.read_exact(&mut buffer).unwrap();
         let string_offset = u32::from_le_bytes(buffer);
 
@@ -90,7 +89,7 @@ impl YaxNode {
         }
     }
 
-    /// Converts a YaxNode to an XML element.
+        /// Converts a YaxNode to an XML element.
     fn to_xml(&self, include_annotations: bool) -> BytesStart {
         let mut element = BytesStart::borrowed(self.tag_name.as_bytes(), self.tag_name.len());
 
@@ -117,7 +116,7 @@ impl YaxNode {
         element
     }
 
-    /// Writes the XML events for a YaxNode to an XML writer.
+        /// Writes the XML events for a YaxNode to an XML writer.
     fn to_xml_events(&self, writer: &mut Writer<&mut Vec<u8>>, include_annotations: bool) {
         writer.write_event(Event::Start(self.to_xml(include_annotations))).unwrap();
 
@@ -162,7 +161,7 @@ fn yax_to_xml<R: Read + Seek>(mut bytes: R, include_annotations: bool) -> Vec<u8
     bytes.read_exact(&mut buffer).unwrap();
     let node_count = u32::from_le_bytes(buffer);
 
-    let mut nodes = Vec::new();
+    let mut nodes = Vec::with_capacity(node_count as usize);
     for _ in 0..node_count {
         nodes.push(YaxNode::from_bytes(&mut bytes));
     }
@@ -194,7 +193,7 @@ fn yax_to_xml<R: Read + Seek>(mut bytes: R, include_annotations: bool) -> Vec<u8
         }
     }
 
-    let mut buffer = Vec::new();
+    let mut buffer = Vec::with_capacity(1024);
     let mut writer = Writer::new_with_indent(&mut buffer, b'\t', 1);
 
     writer.write_event(Event::Start(BytesStart::borrowed(b"root", 4))).unwrap();

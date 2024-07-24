@@ -1,6 +1,7 @@
 /*!
 This Rust DLL provides functionality to convert YAX files to XML files. The implementation is inspired by RaiderB's Dart `yaxToXml` script
 but rewritten in Rust for faster computation time (total 25 seconds faster on an i9 10900k then with dart).
+Note that with an HDD it's is not a significant increase, but with an SSD the speed is markable faster.
 
 This module is intended to be called primarily from Dart using FFI (Foreign Function Interface).
 

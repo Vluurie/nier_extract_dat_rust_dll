@@ -1,6 +1,6 @@
 ﻿# nier_yax_to_xml_rust
 
-This Rust DLL provides functionality to convert YAX files to XML files. The implementation is inspired by RaiderB's Dart `yaxToXml` script
+This Rust DLL provides functionality to convert YAX files to XML files. The implementation is by RaiderB's Dart `yaxToXml` script
 but rewritten in Rust for faster computation time (total 25 seconds faster on converting ~11500 .yax files to xml on an i9 10900k CPU with SSD then with Dart).
 
 RaiderB's dart file: https://github.com/ArthurHeitmann/nier_cli/blob/master/lib/fileTypeUtils/yax/yaxToXml.dart

@@ -1,36 +1,26 @@
-﻿# nier_yax_to_xml_rust
+﻿# nier_extract_dat_rust_dll
 
-This Rust DLL provides functionality to convert YAX files to XML files. The implementation is by RaiderB's Dart `yaxToXml` script
-but rewritten in Rust for faster computation time (total 25 seconds faster on converting ~11500 .yax files to xml on an i9 10900k CPU with SSD then with Dart).
+This Rust DLL provides functionality to extract the .dat files of nier automata, also child files (only pak and yax files from the dat file!!). The implementation is by RaiderB's Dart `datExtractor.dart` witch was also rewritten from python mainly written by `xxk-i`, but rewritten now in Rust for faster computation time (total 30 seconds faster on converting ~11500 .yax files to xml on an i9 10900k CPU with SSD then with Dart).
 
 RaiderB's dart file: https://github.com/ArthurHeitmann/nier_cli/blob/master/lib/fileTypeUtils/yax/yaxToXml.dart
+xxk-i creator of Dat:  https://github.com/xxk-i/DATrepacker
 
-This module is intended to be called primarily from Dart using FFI (Foreign Function Interface).
-
-Modules:
-- `hash_map`: Contains the `HASH_TO_STRING_MAP` for mapping hash values to strings.
-- `jap_to_eng`: Contains the `JAP_TO_ENG` map for translating Japanese strings to English.
-
-Dependencies:
-- `quick_xml`: Used for creating and writing XML events.
-- `encoding_rs`: Used for decoding SHIFT_JIS encoded strings.
-
-The main components include:
-- `YaxNode`: A struct representing a node in the YAX structure.
-- Functions to read and convert YAX data to XML.
-- The external C function `yax_file_to_xml_file` that get's called mainly from Dart FFI for converting YAX files to XML files.
+This module is intended to be called primarily from Dart using FFI (Foreign Function Interface) but can also be integrated into other Rust projects.
 
 Usage:
 1. `yax_file_to_xml_file` function can be called from Dart code via FFI to convert a YAX file to an XML file.
 
 Simply add the Input YAX and the Output for the XML file as parameter.
 
-2. The core logic involves reading nodes from the YAX file, mapping their tags and text, and writing these nodes to an XML structure.
+2. `extract_dat_files_ffi` function can be called from Dart code via FFI to extract the pak files out of the dat file or directly extract the pak content and convert it to xml.
 
-This structure then get's mapped like in F-SERVO for editing or for getting the structured elements for file manipulations of the element's values like NAER does.
+Simply add the Input dat and the Output for the extracted folder as parameter, add `should_extract_pak_files` bool if you want to do it.
 
+3. `extract_pak_files_ffi` function can be called from Dart code via FFI to extract the pak files out of the dat file or directly extract the pak content and convert it to xml.
 
-Dart usage:
+Simply add the Input pak and the Output for the extracted folder as parameter, add `yax_to_xml` bool if you want to do it.
+
+Dart usage example:
 
 ```dart
 import 'dart:ffi';

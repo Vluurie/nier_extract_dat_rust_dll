@@ -3,7 +3,8 @@
 This Rust DLL provides functionality to extract the .dat files of nier automata, also child files (only pak and yax files from the dat file!!). The implementation is by RaiderB's Dart `datExtractor.dart` witch was also rewritten from python mainly written by `xxk-i`, but rewritten now in Rust for faster computation time (total 30 seconds faster on converting ~11500 .yax files to xml on an i9 10900k CPU with SSD then with Dart).
 
 RaiderB's dart file: https://github.com/ArthurHeitmann/nier_cli/blob/master/lib/fileTypeUtils/yax/yaxToXml.dart
-xxk-i creator of Dat:  https://github.com/xxk-i/DATrepacker
+
+xxk-i god creator of dat repacker and other crazy stuff:  https://github.com/xxk-i/DATrepacker
 
 This module is intended to be called primarily from Dart using FFI (Foreign Function Interface) but can also be integrated into other Rust projects.
 

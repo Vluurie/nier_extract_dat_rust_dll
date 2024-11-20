@@ -1,7 +1,7 @@
 [package]
 name = "extract_dat"
 version = "0.0.3"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 quick-xml = "0.23.1"

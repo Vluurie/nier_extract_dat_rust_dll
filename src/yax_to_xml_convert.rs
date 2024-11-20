@@ -1,6 +1,4 @@
-
 use crate::hash_map::HASH_TO_STRING_MAP;
-use crate::jap_to_eng::JAP_TO_ENG;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use encoding_rs::SHIFT_JIS;
@@ -12,10 +10,6 @@ use std::os::raw::c_char;
 
 fn hash_to_string_map(hash: u32) -> Option<&'static str> {
     HASH_TO_STRING_MAP.get(&hash).copied()
-}
-
-fn jap_to_eng(japanese: &str) -> Option<&'static str> {
-    JAP_TO_ENG.get(japanese).copied()
 }
 
 #[derive(Debug)]
@@ -54,34 +48,12 @@ impl YaxNode {
         }
     }
 
-    fn to_xml(&self, include_annotations: bool) -> BytesStart {
-        let mut element = BytesStart::borrowed(self.tag_name.as_bytes(), self.tag_name.len());
-
-        if let Some(text) = &self.text {
-            if include_annotations && text.starts_with("0x") && text.len() > 2 {
-                if let Ok(hash) = u32::from_str_radix(&text[2..], 16) {
-                    if hash != 0 {
-                        if let Some(hash_lookup) = hash_to_string_map(hash) {
-                            element.push_attribute(("str", hash_lookup));
-                        }
-                    }
-                }
-            } else if include_annotations && !text.is_ascii() {
-                if let Some(translation) = jap_to_eng(text) {
-                    element.push_attribute(("eng", translation));
-                }
-            }
-        }
-
-        if include_annotations && self.tag_name == "UNKNOWN" {
-            element.push_attribute(("id", format!("0x{:x}", self.tag_name_hash).as_str()));
-        }
-
-        element
+    fn to_xml(&self) -> BytesStart {
+        BytesStart::borrowed(self.tag_name.as_bytes(), self.tag_name.len())
     }
 
-    fn to_xml_events(&self, writer: &mut Writer<&mut Vec<u8>>, include_annotations: bool) {
-        writer.write_event(Event::Start(self.to_xml(include_annotations))).unwrap();
+    fn to_xml_events(&self, writer: &mut Writer<&mut Vec<u8>>) {
+        writer.write_event(Event::Start(self.to_xml())).unwrap();
 
         if let Some(text) = &self.text {
             let mut text = text.clone();
@@ -93,7 +65,7 @@ impl YaxNode {
         }
 
         for child in &self.children {
-            child.to_xml_events(writer, include_annotations);
+            child.to_xml_events(writer);
         }
 
         writer.write_event(Event::End(BytesEnd::borrowed(self.tag_name.as_bytes()))).unwrap();
@@ -117,7 +89,7 @@ fn read_string_zero_terminated(bytes: &mut impl Read) -> Option<String> {
     }
 }
 
-fn yax_to_xml<R: Read + Seek>(mut bytes: R, include_annotations: bool) -> Vec<u8> {
+fn yax_to_xml<R: Read + Seek>(mut bytes: R) -> Vec<u8> {
     let mut buffer = [0; 4];
     bytes.read_exact(&mut buffer).unwrap();
     let node_count = u32::from_le_bytes(buffer);
@@ -159,32 +131,29 @@ fn yax_to_xml<R: Read + Seek>(mut bytes: R, include_annotations: bool) -> Vec<u8
 
     writer.write_event(Event::Start(BytesStart::borrowed(b"root", 4))).unwrap();
     for root_node in root_nodes {
-        root_node.to_xml_events(&mut writer, include_annotations);
+        root_node.to_xml_events(&mut writer);
     }
     writer.write_event(Event::End(BytesEnd::borrowed(b"root"))).unwrap();
 
     buffer
 }
 
-
 pub fn convert_yax_to_xml(yax_file_path: &str, xml_file_path: &str) {
     let yax_file = File::open(yax_file_path).expect("Failed to open YAX file");
-    let xml_bytes = yax_to_xml(BufReader::new(yax_file), true);
+    let xml_bytes = yax_to_xml(BufReader::new(yax_file));
 
     let mut xml_file = BufWriter::new(File::create(xml_file_path).expect("Failed to create XML file"));
     xml_file.write_all(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n").unwrap();
     xml_file.write_all(&xml_bytes).unwrap();
 }
 
-
-/// This should be called from Dart code via FFI.
 #[no_mangle]
 pub extern "C" fn yax_file_to_xml_file(yax_file_path: *const c_char, xml_file_path: *const c_char) {
     let yax_file_path = unsafe { CStr::from_ptr(yax_file_path).to_str().unwrap() };
     let xml_file_path = unsafe { CStr::from_ptr(xml_file_path).to_str().unwrap() };
 
     let yax_file = File::open(yax_file_path).expect("Failed to open YAX file");
-    let xml_bytes = yax_to_xml(BufReader::new(yax_file), true);
+    let xml_bytes = yax_to_xml(BufReader::new(yax_file));
 
     let mut xml_file = BufWriter::new(File::create(xml_file_path).expect("Failed to create XML file"));
     xml_file.write_all(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n").unwrap();

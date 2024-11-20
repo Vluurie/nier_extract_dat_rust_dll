@@ -1,6 +1,5 @@
 
 pub mod hash_map;
-pub mod jap_to_eng;
 pub mod yax_to_xml_convert;
 pub mod pak_extract;
 

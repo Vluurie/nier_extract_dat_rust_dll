@@ -1,9 +1,6 @@
 workflows:
   build_ffi_dll:
     name: Build Rust FFI DLL for all platforms
-    branches:
-      only:
-        - main
     triggering:
       events:
         - push
@@ -33,6 +30,6 @@ workflows:
           elif [[ "$FCI_OS_NAME" == "windows" ]]; then
             cargo build --release --target x86_64-pc-windows-gnu
     artifacts:
-      - build/**/release/*.dll
-      - build/**/release/*.so
-      - build/**/release/*.dylib
+      - target/release/*.dll
+      - target/release/*.so
+      - target/release/*.dylib

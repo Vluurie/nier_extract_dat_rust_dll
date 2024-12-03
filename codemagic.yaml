@@ -5,6 +5,8 @@ workflows:
       events:
         - push
         - pull_request
+    machine:
+      os: linux
     environment:
       vars:
         RUST_VERSION: "stable"

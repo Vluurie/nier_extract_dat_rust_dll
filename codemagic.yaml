@@ -11,38 +11,48 @@ workflows:
     scripts:
       - name: Install Rustup and Rust
         script: |
+          set -e  # Exit on any error
+          echo "Installing Rustup and Rust for $FCI_OS_NAME..."
           if [[ "$FCI_OS_NAME" == "linux" ]]; then
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || { echo "Failed to install Rustup on Linux"; exit 1; }
             source $HOME/.cargo/env
-            rustup update $RUST_VERSION
+            rustup update $RUST_VERSION || { echo "Failed to update Rust to $RUST_VERSION on Linux"; exit 1; }
           elif [[ "$FCI_OS_NAME" == "macos" ]]; then
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || { echo "Failed to install Rustup on macOS"; exit 1; }
             source $HOME/.cargo/env
-            rustup update $RUST_VERSION
+            rustup update $RUST_VERSION || { echo "Failed to update Rust to $RUST_VERSION on macOS"; exit 1; }
           elif [[ "$FCI_OS_NAME" == "windows" ]]; then
-            choco install -y rustup.install
+            choco install -y rustup.install || { echo "Failed to install Rustup on Windows"; exit 1; }
             refreshenv
-            rustup update $RUST_VERSION
+            rustup update $RUST_VERSION || { echo "Failed to update Rust to $RUST_VERSION on Windows"; exit 1; }
           fi
       - name: Install Dependencies
         script: |
+          set -e
+          echo "Installing dependencies for $FCI_OS_NAME..."
           if [[ "$FCI_OS_NAME" == "linux" ]]; then
-            sudo apt-get update && sudo apt-get install -y build-essential
+            sudo apt-get update && sudo apt-get install -y build-essential || { echo "Failed to install build-essential on Linux"; exit 1; }
           elif [[ "$FCI_OS_NAME" == "macos" ]]; then
-            brew install coreutils
+            brew install coreutils || { echo "Failed to install coreutils on macOS"; exit 1; }
           elif [[ "$FCI_OS_NAME" == "windows" ]]; then
-            rustup install stable-x86_64-pc-windows-gnu
-            rustup default stable-x86_64-pc-windows-gnu
+            rustup install stable-x86_64-pc-windows-gnu || { echo "Failed to install stable GNU toolchain on Windows"; exit 1; }
+            rustup default stable-x86_64-pc-windows-gnu || { echo "Failed to set stable GNU toolchain as default on Windows"; exit 1; }
           fi
       - name: Build for Target
         script: |
+          set -e
+          echo "Building the project for $FCI_OS_NAME..."
           if [[ "$FCI_OS_NAME" == "linux" ]]; then
-            cargo build --release
+            cargo build --release || { echo "Cargo build failed on Linux"; exit 1; }
           elif [[ "$FCI_OS_NAME" == "macos" ]]; then
-            cargo build --release
+            cargo build --release || { echo "Cargo build failed on macOS"; exit 1; }
           elif [[ "$FCI_OS_NAME" == "windows" ]]; then
-            cargo build --release --target x86_64-pc-windows-gnu
+            cargo build --release --target x86_64-pc-windows-gnu || { echo "Cargo build failed on Windows"; exit 1; }
           fi
+      - name: Debug Build Output
+        script: |
+          echo "Listing target/release directory contents for $FCI_OS_NAME..."
+          ls -la target/release || { echo "Failed to list target/release contents"; exit 1; }
     artifacts:
       - target/release/*.dll
       - target/release/*.so

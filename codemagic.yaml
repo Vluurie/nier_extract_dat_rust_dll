@@ -9,9 +9,15 @@ workflows:
       vars:
         RUST_VERSION: "stable"
     scripts:
+      - name: Debug Build Environment
+        script: |
+          echo "Debugging the build environment for $FCI_OS_NAME..."
+          rustc --version || { echo "Rust compiler is not installed"; exit 1; }
+          cargo --version || { echo "Cargo is not installed"; exit 1; }
+          ls -la || { echo "Failed to list current directory contents"; exit 1; }
       - name: Install Rustup and Rust
         script: |
-          set -e  # Exit on any error
+          set -e
           echo "Installing Rustup and Rust for $FCI_OS_NAME..."
           if [[ "$FCI_OS_NAME" == "linux" ]]; then
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || { echo "Failed to install Rustup on Linux"; exit 1; }
@@ -43,11 +49,11 @@ workflows:
           set -e
           echo "Building the project for $FCI_OS_NAME..."
           if [[ "$FCI_OS_NAME" == "linux" ]]; then
-            cargo build --release || { echo "Cargo build failed on Linux"; exit 1; }
+            cargo build --release || { echo "Cargo build failed on Linux"; cargo check; exit 1; }
           elif [[ "$FCI_OS_NAME" == "macos" ]]; then
-            cargo build --release || { echo "Cargo build failed on macOS"; exit 1; }
+            cargo build --release || { echo "Cargo build failed on macOS"; cargo check; exit 1; }
           elif [[ "$FCI_OS_NAME" == "windows" ]]; then
-            cargo build --release --target x86_64-pc-windows-gnu || { echo "Cargo build failed on Windows"; exit 1; }
+            cargo build --release --target x86_64-pc-windows-gnu || { echo "Cargo build failed on Windows"; cargo check; exit 1; }
           fi
       - name: Debug Build Output
         script: |

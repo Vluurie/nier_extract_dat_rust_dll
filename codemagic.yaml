@@ -5,9 +5,8 @@ workflows:
       events:
         - push
         - pull_request
-    machine:
-      os: linux
     environment:
+      container: ubuntu:22.04  # Use a Linux container
       vars:
         RUST_VERSION: "stable"
     scripts:
@@ -15,6 +14,7 @@ workflows:
         script: |
           set -e
           echo "Installing Rust on Linux..."
+          apt-get update && apt-get install -y curl build-essential || { echo "Failed to install dependencies"; exit 1; }
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           export PATH="$HOME/.cargo/bin:$PATH"
           rustup install $RUST_VERSION || { echo "Failed to install Rust"; exit 1; }
@@ -24,11 +24,6 @@ workflows:
           export PATH="$HOME/.cargo/bin:$PATH"
           rustc --version || { echo "Rust compiler is not installed"; exit 1; }
           cargo --version || { echo "Cargo is not installed"; exit 1; }
-      - name: Install Dependencies
-        script: |
-          set -e
-          echo "Installing build-essential..."
-          sudo apt-get update && sudo apt-get install -y build-essential || { echo "Failed to install dependencies"; exit 1; }
       - name: Build Project
         script: |
           set -e

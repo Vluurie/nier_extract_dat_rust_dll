@@ -1,0 +1,38 @@
+workflows:
+  build_ffi_dll:
+    name: Build Rust FFI DLL for all platforms
+    branches:
+      only:
+        - main
+    triggering:
+      events:
+        - push
+        - pull_request
+    environment:
+      vars:
+        RUST_VERSION: "stable"
+    scripts:
+      - name: Install Rust
+        script: rustup update $RUST_VERSION
+      - name: Install Dependencies
+        script: |
+          if [[ "$FCI_OS_NAME" == "linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y build-essential
+          elif [[ "$FCI_OS_NAME" == "macos" ]]; then
+            brew install coreutils
+          elif [[ "$FCI_OS_NAME" == "windows" ]]; then
+            rustup install stable-x86_64-pc-windows-gnu
+            rustup default stable-x86_64-pc-windows-gnu
+          fi
+      - name: Build for Target
+        script: |
+          if [[ "$FCI_OS_NAME" == "linux" ]]; then
+            cargo build --release
+          elif [[ "$FCI_OS_NAME" == "macos" ]]; then
+            cargo build --release
+          elif [[ "$FCI_OS_NAME" == "windows" ]]; then
+            cargo build --release --target x86_64-pc-windows-gnu
+    artifacts:
+      - build/**/release/*.dll
+      - build/**/release/*.so
+      - build/**/release/*.dylib

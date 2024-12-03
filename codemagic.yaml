@@ -9,8 +9,21 @@ workflows:
       vars:
         RUST_VERSION: "stable"
     scripts:
-      - name: Install Rust
-        script: rustup update $RUST_VERSION
+      - name: Install Rustup and Rust
+        script: |
+          if [[ "$FCI_OS_NAME" == "linux" ]]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+            rustup update $RUST_VERSION
+          elif [[ "$FCI_OS_NAME" == "macos" ]]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+            rustup update $RUST_VERSION
+          elif [[ "$FCI_OS_NAME" == "windows" ]]; then
+            choco install -y rustup.install
+            refreshenv
+            rustup update $RUST_VERSION
+          fi
       - name: Install Dependencies
         script: |
           if [[ "$FCI_OS_NAME" == "linux" ]]; then
@@ -29,6 +42,7 @@ workflows:
             cargo build --release
           elif [[ "$FCI_OS_NAME" == "windows" ]]; then
             cargo build --release --target x86_64-pc-windows-gnu
+          fi
     artifacts:
       - target/release/*.dll
       - target/release/*.so

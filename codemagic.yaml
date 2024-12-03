@@ -15,10 +15,21 @@ workflows:
           echo "Installing Docker on macOS..."
           brew install --cask docker || { echo "Failed to install Docker"; exit 1; }
           open /Applications/Docker.app || { echo "Failed to start Docker"; exit 1; }
+
+          echo "Waiting for Docker to start..."
+          timeout=120  # Set a timeout of 120 seconds (2 minutes)
+          elapsed=0
           while ! docker system info > /dev/null 2>&1; do
-            echo "Waiting for Docker to start..."
+            if [[ "$elapsed" -ge "$timeout" ]]; then
+              echo "Docker did not start within $timeout seconds"
+              exit 1
+            fi
+            echo "Docker is not ready yet, retrying in 5 seconds..."
             sleep 5
+            elapsed=$((elapsed + 5))
           done
+          echo "Docker is ready."
+
       - name: Build and Test in Linux Container
         script: |
           set -e

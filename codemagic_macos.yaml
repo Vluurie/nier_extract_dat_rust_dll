@@ -1,6 +1,6 @@
 workflows:
-  rust_pipeline_linux:
-    name: Rust CI/CD Pipeline for Linux
+  rust_pipeline_macos:
+    name: Rust CI/CD Pipeline for macOS
     triggering:
       events:
         - push
@@ -12,7 +12,7 @@ workflows:
       - name: Install Rustup and Rust
         script: |
           set -e
-          echo "Installing Rust on Linux..."
+          echo "Installing Rust on macOS..."
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           export PATH="$HOME/.cargo/bin:$PATH"
           rustup install $RUST_VERSION || { echo "Failed to install Rust"; exit 1; }
@@ -22,27 +22,22 @@ workflows:
           export PATH="$HOME/.cargo/bin:$PATH"
           rustc --version || { echo "Rust compiler is not installed"; exit 1; }
           cargo --version || { echo "Cargo is not installed"; exit 1; }
-      - name: Install Dependencies
-        script: |
-          set -e
-          echo "Installing build-essential..."
-          sudo apt-get update && sudo apt-get install -y build-essential || { echo "Failed to install dependencies"; exit 1; }
       - name: Build Project
         script: |
           set -e
-          echo "Building the project on Linux..."
+          echo "Building the project on macOS..."
           export PATH="$HOME/.cargo/bin:$PATH"
-          cargo build --release || { echo "Cargo build failed on Linux"; exit 1; }
+          cargo build --release || { echo "Cargo build failed on macOS"; exit 1; }
       - name: Test Project
         script: |
           set -e
-          echo "Running tests on Linux..."
+          echo "Running tests on macOS..."
           export PATH="$HOME/.cargo/bin:$PATH"
-          cargo test --release || { echo "Cargo tests failed on Linux"; exit 1; }
+          cargo test --release || { echo "Cargo tests failed on macOS"; exit 1; }
       - name: Debug Build Output
         script: |
           echo "Listing target/release directory contents..."
           export PATH="$HOME/.cargo/bin:$PATH"
           ls -la target/release || { echo "Failed to list target/release contents"; exit 1; }
     artifacts:
-      - target/release/*.so
+      - target/release/*.dylib

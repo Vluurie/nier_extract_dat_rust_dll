@@ -1,6 +1,3 @@
-﻿# nier_extract_dat_rust_dll
-
-# Project Overview
 
 This is a **faster** rewrite of `datExtractor.dart`, built to speed up extracting **script-related files** from **NieR: Automata** `.dat` archives. It’s optimized for the **NAER randomizer**, skipping Japanese-to-English translation to keep things quick and only extracting **`.pak` and `.yax` files**.
 

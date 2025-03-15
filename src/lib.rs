@@ -99,71 +99,90 @@ pub async fn extract_dat_files(
     extract_dir: &str,
     should_extract_pak_files: bool,
 ) -> io::Result<Vec<String>> {
-    let mut bytes = ByteDataWrapper::from_file(dat_path).await?;  
-    if bytes.data.is_empty() { 
-        println!("Warning: Empty DAT file"); 
-        return Ok(vec![]); 
+    let mut bytes = ByteDataWrapper::from_file(dat_path).await?;
+    if bytes.data.is_empty() {
+        println!("Warning: Empty DAT file");
+        return Ok(vec![]);
     }
 
-    let header = DatHeader::new(&mut bytes)?; 
-    bytes.set_position(header.file_offsets_offset as usize); 
-    let file_offsets = (0..header.file_number)  
+    let header = DatHeader::new(&mut bytes)?;
+    bytes.set_position(header.file_offsets_offset as usize);
+    let file_offsets = (0..header.file_number)
         .map(|_| bytes.read_u32())
         .collect::<io::Result<Vec<_>>>()?;
 
-    bytes.set_position(header.file_sizes_offset as usize); 
-    let file_sizes = (0..header.file_number) 
+    bytes.set_position(header.file_sizes_offset as usize);
+    let file_sizes = (0..header.file_number)
         .map(|_| bytes.read_u32())
         .collect::<io::Result<Vec<_>>>()?;
 
-    bytes.set_position(header.file_names_offset as usize); 
-    let name_length = bytes.read_u32()? as usize; 
+    bytes.set_position(header.file_names_offset as usize);
+    let name_length = bytes.read_u32()? as usize;
     let file_names = (0..header.file_number)
         .map(|_| {
-            let name = bytes.read_string(name_length)?; 
-            Ok(name.split('\u{0000}').next().unwrap().to_string())  
+            let name = bytes.read_string(name_length)?;
+            Ok(name.split('\u{0000}').next().unwrap().to_string())
         })
         .collect::<io::Result<Vec<_>>>()?;
 
     fs::create_dir_all(extract_dir).await?;
 
-    for i in 0..header.file_number as usize { 
-        bytes.set_position(file_offsets[i] as usize);  
-        let mut extracted_file = fs::File::create(Path::new(extract_dir).join(&file_names[i])).await?;  
-        extracted_file.write_all(&bytes.read_u8_list(file_sizes[i] as usize)?).await?; 
+    for i in 0..header.file_number as usize {
+        bytes.set_position(file_offsets[i] as usize);
+        let file_path = Path::new(extract_dir).join(&file_names[i]);
+        let mut extracted_file = fs::File::create(&file_path).await?;
+        extracted_file.write_all(&bytes.read_u8_list(file_sizes[i] as usize)?).await?;
     }
 
-    let mut file_names_sorted = file_names.clone();
-    file_names_sorted.sort_by(|a, b| { 
-        let a_parts: Vec<&str> = a.split('.').collect();
-        let b_parts: Vec<&str> = b.split('.').collect(); 
-        match a_parts[0].to_lowercase().cmp(&b_parts[0].to_lowercase()) {
-            std::cmp::Ordering::Equal => a_parts[1].to_lowercase().cmp(&b_parts[1].to_lowercase()), 
-            other => other,
-        }
-    });
-
-    let json_metadata = json!({ 
-        "version": 1,
-        "files": file_names_sorted,
-        "basename": Path::new(dat_path).file_stem().unwrap().to_str().unwrap(),
-        "ext": Path::new(dat_path).extension().unwrap().to_str().unwrap(),
-    });
-
-    let json_path = Path::new(extract_dir).join("dat_info.json");  
-    let mut json_file = fs::File::create(json_path).await?; 
-    json_file.write_all(serde_json::to_string_pretty(&json_metadata)?.as_bytes()).await?; 
-
-    if should_extract_pak_files { 
-        let pak_files: Vec<&String> = file_names_sorted.iter().filter(|file| file.ends_with(".pak")).collect(); 
-        for pak_file in pak_files {
-            let pak_path = Path::new(extract_dir).join(pak_file); 
-            let pak_extract_dir = Path::new(extract_dir).join(PAK_EXTRACT_SUBDIR).join(pak_file); 
-            extract_pak_files(pak_path.to_str().unwrap(), pak_extract_dir.to_str().unwrap(), true).await?;
+    // deduplicated list of file names (preserving the original order).
+    let mut deduped = Vec::new();
+    for name in &file_names {
+        if !deduped.contains(name) {
+            deduped.push(name.clone());
         }
     }
 
-    let extracted_files = file_names_sorted 
+    let json_metadata = json!({
+        "version": 3,
+        "files": deduped,
+        "original_order": file_names,
+        "basename": Path::new(dat_path)
+                        .file_stem()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+        "ext": Path::new(dat_path)
+                        .extension()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+    });
+
+    let json_path = Path::new(extract_dir).join("dat_info.json");
+    let mut json_file = fs::File::create(json_path).await?;
+    json_file
+        .write_all(serde_json::to_string_pretty(&json_metadata)?.as_bytes())
+        .await?;
+
+if should_extract_pak_files {
+    for file_name in &file_names {
+        if file_name.ends_with(".pak") {
+            let pak_path = Path::new(extract_dir).join(file_name);
+            let pak_extract_dir = Path::new(extract_dir)
+                .join(PAK_EXTRACT_SUBDIR)
+                .join(file_name);
+            extract_pak_files(
+                pak_path.to_str().unwrap(),
+                pak_extract_dir.to_str().unwrap(),
+                true,
+            )
+            .await?;
+        }
+    }
+}
+
+    // the list of extracted file paths (in original order).
+    let extracted_files = file_names
         .iter()
         .map(|file| Path::new(extract_dir).join(file).to_str().unwrap().to_string())
         .collect();
